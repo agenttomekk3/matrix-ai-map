@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MATRIX — AI Operations Map (3D Holographic Command Deck)</title>
+  <meta name="description" content="Live 3D interactive mission-control map of the Acer-AI-Server ecosystem with flowing data pipes, dynamic shapes, plain-English explanations, and draggable 3D nodes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/matrix.css">
+</head>
+<body>
+
+  <!-- Background Matrix Rain & Atmospheric Effects -->
+  <canvas id="matrix-canvas"></canvas>
+  <div class="crt-scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- Main Mission Control App Container -->
+  <div id="app">
+
+    <!-- Top Mission Control Navigation Bar -->
+    <header class="topbar">
+      <div class="brand-section">
+        <div class="brand-logo">
+          <span class="pulse-dot"></span>
+          MATRIX // AI OPERATIONS MAP
+        </div>
+        <span class="brand-badge">3D Hologram</span>
+      </div>
+
+      <!-- Quick Telemetry Stats -->
+      <div class="telemetry-strip">
+        <div class="stat-item" title="Compute Host">
+          <span class="stat-label">HOST:</span>
+          <span class="stat-val">Acer-AI-Server</span>
+        </div>
+
+        <div class="stat-item" title="CPU Utilization">
+          <span class="stat-label">CPU:</span>
+          <div class="mini-bar"><div id="stat-cpu-fill" class="mini-fill" style="width: 15%"></div></div>
+          <span id="stat-cpu-val" class="stat-val">--%</span>
+        </div>
+
+        <div class="stat-item" title="RAM Utilization (16GB)">
+          <span class="stat-label">RAM:</span>
+          <div class="mini-bar"><div id="stat-ram-fill" class="mini-fill" style="width: 58%"></div></div>
+          <span id="stat-ram-val" class="stat-val">-- / 15GB</span>
+        </div>
+
+        <div class="stat-item" title="GPU (NVIDIA GTX 850M)">
+          <span class="stat-label">GPU:</span>
+          <span id="stat-gpu-val" class="stat-val cyan">5MB (44°C)</span>
+        </div>
+
+        <div class="stat-item" id="stat-attention-badge" style="cursor: pointer" title="Click to view Attention items">
+          <span class="stat-label">ATTENTION:</span>
+          <span id="stat-blocked-count" class="stat-val amber">19 Items</span>
+        </div>
+      </div>
+
+      <!-- Header Action Controls -->
+      <div class="header-actions">
+        <button id="btn-reset-layout" class="btn-ctrl" title="Reset all nodes back to the curated organic constellation layout">
+          ↺ Reset Positions
+        </button>
+        <button id="btn-test-packet" class="btn-ctrl btn-pulse" title="Launch a blazing glowing data packet through the conduits">
+          ⚡ Launch Packet
+        </button>
+        <button id="btn-trace-task" class="btn-ctrl" title="View step-by-step task execution paths">
+          Trace Task
+        </button>
+        <button id="btn-coverage" class="btn-ctrl" title="Inspect telemetry coverage audit">
+          Coverage
+        </button>
+        <button id="btn-rain-toggle" class="btn-ctrl" title="Toggle background digital rain animation">
+          Rain: ON
+        </button>
+        <button id="btn-fit-screen" class="btn-ctrl" title="Fit entire topology on screen">
+          Fit Screen
+        </button>
+      </div>
+    </header>
+
+    <!-- Sub-bar: Filters, Search & Dynamic Conduit Controls -->
+    <div class="subbar">
+      <div class="filter-group">
+        <button class="filter-pill active" data-filter="all">All Components</button>
+        <button class="filter-pill" data-filter="running">Running</button>
+        <button class="filter-pill" data-filter="idle">Idle / Ready</button>
+        <button class="filter-pill" data-filter="attention">Attention Needed</button>
+        <button class="filter-pill" data-filter="verified">Verified</button>
+      </div>
+
+      <!-- Pipe Dynamics Controls -->
+      <div class="pipe-controls">
+        <span class="pipe-ctrl-label">CONDUIT FLOW:</span>
+        <button id="btn-flow-density" class="pipe-btn" title="Toggle bubble density">Bubbles: High</button>
+        <button id="btn-flow-speed" class="pipe-btn" title="Toggle flow speed">Speed: 1x</button>
+        <button id="btn-audio-toggle" class="pipe-btn" title="Toggle cyber ambient audio synthesis">Audio: 🔇 OFF</button>
+      </div>
+
+      <!-- Navigation & Drag Hint -->
+      <div class="drag-hint">
+        <span>✥ Drag nodes • Hover to surge conduits • Click ℹ for plain English</span>
+      </div>
+
+      <div class="search-box">
+        <span style="color:var(--text-muted)">⌕</span>
+        <input type="text" id="search-input" placeholder="Search agents, services, models, tasks..." autocomplete="off">
+        <span class="search-kbd">/</span>
+      </div>
+    </div>
+
+    <!-- Natural Planar Viewport (Clear, upright, effortless navigation) -->
+    <main class="viewport" id="viewport">
+      
+      <!-- SVG Graph Layer with 3D Elements -->
+      <svg id="graph-svg">
+        <defs>
+          <!-- 3D Element Drop Shadows (Natural physical elevation) -->
+          <filter id="node-3d-shadow" x="-30%" y="-30%" width="160%" height="170%">
+            <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(0,0,0,0.75)" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.9)" />
+          </filter>
+
+          <filter id="node-3d-shadow-hover" x="-35%" y="-35%" width="170%" height="180%">
+            <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="rgba(0,0,0,0.85)" />
+            <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="rgba(0,255,102,0.4)" />
+          </filter>
+
+          <filter id="jewel-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.8)" />
+          </filter>
+
+          <filter id="pipe-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComponentTransfer in="blur" result="glow">
+              <feFuncA type="linear" slope="0.8" />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode in="glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <!-- 3D Physical Element Faceplate Gradient (Milled alloy / polished dark glass) -->
+          <linearGradient id="card-3d-face" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#0f2b16" stop-opacity="0.96" />
+            <stop offset="20%" stop-color="#0a1d10" stop-opacity="0.94" />
+            <stop offset="70%" stop-color="#06130a" stop-opacity="0.96" />
+            <stop offset="100%" stop-color="#030a05" stop-opacity="0.98" />
+          </linearGradient>
+
+          <linearGradient id="card-3d-face-hover" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#164022" stop-opacity="0.98" />
+            <stop offset="20%" stop-color="#0f2b17" stop-opacity="0.96" />
+            <stop offset="70%" stop-color="#091b0f" stop-opacity="0.98" />
+            <stop offset="100%" stop-color="#050e08" stop-opacity="1" />
+          </linearGradient>
+
+          <!-- 3D Extruded Bevel Slab Gradient (Simulates physical thickness) -->
+          <linearGradient id="card-3d-slab" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#002b11" />
+            <stop offset="50%" stop-color="#001608" />
+            <stop offset="100%" stop-color="#000702" />
+          </linearGradient>
+
+          <!-- 3D Top Rim Specular Highlight (Simulates directional studio lighting on polished bevel) -->
+          <linearGradient id="rim-specular-green" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.45)" />
+            <stop offset="35%" stop-color="rgba(0, 255, 102, 0.55)" />
+            <stop offset="100%" stop-color="rgba(0, 255, 102, 0.05)" />
+          </linearGradient>
+
+          <linearGradient id="rim-specular-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.5)" />
+            <stop offset="35%" stop-color="rgba(0, 229, 255, 0.6)" />
+            <stop offset="100%" stop-color="rgba(0, 229, 255, 0.05)" />
+          </linearGradient>
+
+          <!-- 3D Tactile Push Jewel for Info Icon (ℹ) -->
+          <radialGradient id="jewel-info-3d" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#6df5ff" />
+            <stop offset="35%" stop-color="#00d5f0" />
+            <stop offset="75%" stop-color="#007a8c" />
+            <stop offset="100%" stop-color="#00353d" />
+          </radialGradient>
+
+          <!-- 3D Volumetric Shiny Bubbles -->
+          <radialGradient id="bubble-3d-green" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="30%" stop-color="#3dfb93" stop-opacity="0.9" />
+            <stop offset="75%" stop-color="#00aa40" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#003312" stop-opacity="0.95" />
+          </radialGradient>
+
+          <radialGradient id="bubble-3d-cyan" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="30%" stop-color="#6df5ff" stop-opacity="0.9" />
+            <stop offset="75%" stop-color="#009db3" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#002d33" stop-opacity="0.95" />
+          </radialGradient>
+
+          <radialGradient id="bubble-3d-amber" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+            <stop offset="30%" stop-color="#ffe26d" stop-opacity="0.9" />
+            <stop offset="75%" stop-color="#cc8800" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#402b00" stop-opacity="0.95" />
+          </radialGradient>
+
+          <!-- 3D Cylindrical Glass Pipe Tubes (Rounded lighting reflection) -->
+          <linearGradient id="pipe-tube-green" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.3)" />
+            <stop offset="25%" stop-color="rgba(0, 255, 102, 0.45)" />
+            <stop offset="60%" stop-color="rgba(0, 60, 22, 0.75)" />
+            <stop offset="85%" stop-color="rgba(0, 22, 7, 0.9)" />
+            <stop offset="100%" stop-color="rgba(0, 9, 3, 0.95)" />
+          </linearGradient>
+
+          <linearGradient id="pipe-tube-cyan" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.35)" />
+            <stop offset="25%" stop-color="rgba(0, 229, 255, 0.5)" />
+            <stop offset="60%" stop-color="rgba(0, 60, 80, 0.75)" />
+            <stop offset="85%" stop-color="rgba(0, 18, 25, 0.9)" />
+            <stop offset="100%" stop-color="rgba(0, 8, 11, 0.95)" />
+          </linearGradient>
+
+          <linearGradient id="pipe-tube-amber" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="rgba(255, 255, 255, 0.3)" />
+            <stop offset="25%" stop-color="rgba(255, 183, 0, 0.5)" />
+            <stop offset="60%" stop-color="rgba(75, 45, 0, 0.75)" />
+            <stop offset="85%" stop-color="rgba(28, 16, 0, 0.9)" />
+            <stop offset="100%" stop-color="rgba(11, 6, 0, 0.95)" />
+          </linearGradient>
+
+          <!-- Constellation Nebula Auras -->
+          <radialGradient id="aura-command" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(0, 229, 255, 0.16)" />
+            <stop offset="60%" stop-color="rgba(0, 229, 255, 0.04)" />
+            <stop offset="100%" stop-color="rgba(0, 0, 0, 0)" />
+          </radialGradient>
+
+          <radialGradient id="aura-reasoning" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(57, 255, 20, 0.16)" />
+            <stop offset="60%" stop-color="rgba(57, 255, 20, 0.04)" />
+            <stop offset="100%" stop-color="rgba(0, 0, 0, 0)" />
+          </radialGradient>
+
+          <radialGradient id="aura-memory" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(112, 255, 0, 0.16)" />
+            <stop offset="60%" stop-color="rgba(112, 255, 0, 0.04)" />
+            <stop offset="100%" stop-color="rgba(0, 0, 0, 0)" />
+          </radialGradient>
+
+          <radialGradient id="aura-production" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(255, 234, 0, 0.16)" />
+            <stop offset="60%" stop-color="rgba(255, 234, 0, 0.04)" />
+            <stop offset="100%" stop-color="rgba(0, 0, 0, 0)" />
+          </radialGradient>
+
+          <!-- Arrowhead Markers -->
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#1f4f2c"/>
+          </marker>
+          <marker id="arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#00ff66"/>
+          </marker>
+          <marker id="arrow-highlight" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#00e5ff"/>
+          </marker>
+          <marker id="arrow-trace" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#ffb700"/>
+          </marker>
+        </defs>
+
+        <!-- Dynamic Constellation Auras -->
+        <g id="auras-group"></g>
+        <!-- 3D Conduits / Glass Pipe Jackets -->
+        <g id="pipes-jacket-group"></g>
+        <!-- Conduits / Fluid Cores -->
+        <g id="connections-group"></g>
+        <!-- Shockwaves & Pulses -->
+        <g id="shockwaves-group"></g>
+        <!-- 3D Flowing Bubbles & Light Guides -->
+        <g id="bubbles-group"></g>
+        <g id="particles-group"></g>
+        <!-- Slick 3D Geometric Nodes -->
+        <g id="nodes-group"></g>
+      </svg>
+    </main>
+
+      <!-- Floating Navigation HUD -->
+      <div class="viewport-hud">
+        <div class="hud-pill">
+          <button id="btn-zoom-in" class="btn-hud" title="Zoom In">+</button>
+          <span id="zoom-indicator" class="zoom-indicator">85%</span>
+          <button id="btn-zoom-out" class="btn-hud" title="Zoom Out">-</button>
+          <button id="btn-zoom-reset" class="btn-hud" title="Reset Camera">↺</button>
+        </div>
+      </div>
+
+      <!-- Minimap Container in Bottom Right -->
+      <div class="minimap-container">
+        <div class="minimap-header">
+          <span>Overview Radar</span>
+          <span>3D Deck</span>
+        </div>
+        <svg id="minimap-svg" viewBox="0 0 220 120">
+          <rect id="minimap-viewport-rect" class="minimap-viewport-rect" x="0" y="0" width="80" height="50" rx="2"></rect>
+        </svg>
+      </div>
+    </main>
+
+    <!-- Slide-Out Inspector Drawer -->
+    <aside class="drawer" id="inspector-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title-group">
+          <span id="drawer-node-category" class="drawer-category">Group // Category</span>
+          <h2 id="drawer-node-title" class="drawer-title">Node Title</h2>
+        </div>
+        <button id="drawer-close" class="drawer-close" title="Close Drawer">✕</button>
+      </div>
+
+      <div class="drawer-content" id="drawer-content">
+        <!-- Injected dynamically by matrix.js -->
+      </div>
+    </aside>
+
+    <!-- Bottom Dock: Collapsible Live Activity Feed & Attention -->
+    <footer class="bottom-dock" id="bottom-dock">
+      <div class="dock-bar" id="dock-toggle">
+        <div class="dock-tabs">
+          <div class="dock-tab active" id="tab-feed">
+            <span class="pulse-dot" style="width:6px;height:6px"></span>
+            Live Activity Feed
+          </div>
+          <div class="dock-tab" id="tab-attention">
+            <span style="color:var(--accent-amber)">▲</span>
+            Attention Needed (19 Blocked Items)
+          </div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">
+          ▲ Click to expand / collapse
+        </div>
+      </div>
+      <div class="dock-body" id="dock-body">
+        <!-- Live event rows injected here -->
+      </div>
+    </footer>
+
+    <!-- Plain English Info Modal (When ℹ Icon is Clicked) -->
+    <div class="modal-overlay" id="plain-english-modal">
+      <div class="modal-box plain-english-box">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span class="info-badge-header">ℹ</span>
+            <span id="pe-title">Component Name</span>
+          </div>
+          <button class="drawer-close modal-close">✕</button>
+        </div>
+        <div class="modal-body plain-english-body">
+          <div class="pe-tagline" id="pe-tagline">Short human-friendly summary</div>
+
+          <div class="pe-card">
+            <div class="pe-heading">💡 In Plain English (No Coding Jargon)</div>
+            <div class="pe-text" id="pe-plain-english"></div>
+          </div>
+
+          <div class="pe-card">
+            <div class="pe-heading">🎯 Why It Matters in Your Setup</div>
+            <div class="pe-text" id="pe-why-it-matters"></div>
+          </div>
+
+          <div class="pe-card">
+            <div class="pe-heading">⚡ Current Real-Life Status</div>
+            <div class="pe-text" id="pe-status-simple"></div>
+          </div>
+
+          <div class="pe-card">
+            <div class="pe-heading">💬 How You Interact With It</div>
+            <div class="pe-text" id="pe-how-to-use"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Trace Modal -->
+    <div class="modal-overlay" id="trace-modal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span>⎈</span> Trace Observed Task Flow
+          </div>
+          <button class="drawer-close modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="color:var(--text-secondary);font-size:12px">
+            Select a verified execution flow to isolate its components and watch glowing plasma packets rush through the 3D conduits across agents, tools, and outputs:
+          </p>
+          <div id="trace-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coverage Audit Modal -->
+    <div class="modal-overlay" id="coverage-modal">
+      <div class="modal-box" style="width:760px">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span>🛡</span> Telemetry Coverage & Monitoring Audit
+          </div>
+          <button class="drawer-close modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="section-label">Direct Continuous Telemetry</div>
+          <table class="coverage-table">
+            <thead>
+              <tr>
+                <th>Component / Metric</th>
+                <th>Monitoring Method</th>
+                <th>Quality Rating</th>
+              </tr>
+            </thead>
+            <tbody id="coverage-monitored-rows"></tbody>
+          </table>
+
+          <div class="section-label" style="margin-top:14px">Unverified Relationships & Smallest Practical Hooks</div>
+          <table class="coverage-table">
+            <thead>
+              <tr>
+                <th>Target Relationship</th>
+                <th>Current Limitation</th>
+                <th>Smallest Practical Remedy</th>
+              </tr>
+            </thead>
+            <tbody id="coverage-unverified-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+  </div>
+
+  <script src="/matrix.js"></script>
+</body>
+</html>
